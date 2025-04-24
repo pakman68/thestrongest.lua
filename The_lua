@@ -1,0 +1,85 @@
+loadstring([[
+-- واجهة GUI مع شعار ANS
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 400, 0, 150)
+Frame.Position = UDim2.new(0.5, -200, 0.1, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
+
+-- الشعار ANS
+local Logo = Instance.new("TextLabel", Frame)
+Logo.Size = UDim2.new(1, 0, 0.2, 0)
+Logo.Position = UDim2.new(0, 0, 0, 0)
+Logo.Text = "شعار ANS"
+Logo.TextSize = 30
+Logo.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+Logo.TextColor3 = Color3.fromRGB(255, 255, 255)
+Logo.TextScaled = true
+
+-- زر التشغيل
+local Button = Instance.new("TextButton", Frame)
+Button.Size = UDim2.new(1, 0, 0.5, 0)
+Button.Position = UDim2.new(0, 0, 0.2, 0)
+Button.Text = "تشغيل Kill Aura"
+Button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+local Status = Instance.new("TextLabel", Frame)
+Status.Size = UDim2.new(1, 0, 0.3, 0)
+Status.Position = UDim2.new(0, 0, 0.7, 0)
+Status.Text = "الحالة: متوقفة"
+Status.BackgroundTransparency = 1
+Status.TextColor3 = Color3.fromRGB(255, 255, 255)
+
+-- تفعيل الـ Kill Aura
+local autoKillActive = false
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local lp = Players.LocalPlayer
+
+local function getClosestEnemy()
+    local myHRP = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+    local closest = nil
+    local minDist = math.huge
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= lp and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            local dist = (myHRP.Position - plr.Character.HumanoidRootPart.Position).Magnitude
+            if dist < 30 and dist < minDist then
+                minDist = dist
+                closest = plr
+            end
+        end
+    end
+    return closest
+end
+
+-- الهجوم التلقائي
+local auraLoop
+Button.MouseButton1Click:Connect(function()
+    autoKillActive = not autoKillActive
+    if autoKillActive then
+        Button.Text = "إيقاف Kill Aura"
+        Status.Text = "الحالة: شغّال"
+
+        auraLoop = RunService.RenderStepped:Connect(function()
+            pcall(function()
+                local target = getClosestEnemy()
+                if target then
+                    local args = {
+                        [1] = "M1",
+                        [2] = target.Character.HumanoidRootPart.Position
+                    }
+                    game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("SkillRemote"):FireServer(unpack(args))
+                end
+            end)
+        end)
+    else
+        Button.Text = "تشغيل Kill Aura"
+        Status.Text = "الحالة: متوقفة"
+        if auraLoop then auraLoop:Disconnect() end
+    end
+end)
+]])()
